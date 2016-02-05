@@ -13,3 +13,9 @@ In order to use the hook script with the ACME client, you will have to specify `
 	./letsencrypt.sh -t dns-01 -k hook.sh ...
 
 You can also set the verification type and the path to the script in `config.sh`.
+
+The `letsencrypt.sh` script will also call the hook script with the `deploy_cert` argument when a certificate is ready. The `hook.sh` script handles this by checking if a `deploy.sh` script exists, and if so, it will be called with the following arguments:
+
+	./deploy.sh domain-name path-to-key path-to-cert path-to-fullchain
+
+If special handling is required for any of the issued certificates, copy `deploy.sh.example` to `deploy.sh` and modify as necessary.

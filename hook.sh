@@ -114,40 +114,47 @@ function del_record {
 function deploy_challenge {
 	local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
 
-	echo "Checking existence of _acme-challenge.$DOMAIN..."
+	echo " + Checking existence of _acme-challenge.$DOMAIN..."
 
 	zone_id=$(get_zone "$DOMAIN")
 	if [[ $? != 0 ]]; then
-		echo " -> Failed to get zone ID: $zone_id" 1>&2
+		echo "  - Failed to get zone ID: $zone_id" 1>&2
 		return 1
 	fi
 
 	delres=$(del_record "_acme-challenge.$DOMAIN" "$zone_id")
 	if [[ $? == 0 ]]; then
-		echo " -> Removed previous record."
+		echo "  + Removed previous record."
 	fi
 
-	echo "Adding new TXT record _acme-challenge.$DOMAIN..."
+	echo " + Adding new TXT record _acme-challenge.$DOMAIN..."
 
 	addres=$(add_record "_acme-challenge.$DOMAIN" "$TOKEN_VALUE" "$zone_id")
 	if [[ $? == 0 ]]; then
-		echo " -> Successfully added."
+		echo "  + Successfully added."
 	else
-		echo " -> Failed to add: $addres" 1>&2
+		echo "  - Failed to add: $addres" 1>&2
 	fi
 
-	echo "Waiting for record propagation..."
+	echo " + Waiting for record propagation..."
 
 	sleep 5
 
-	while true; do
+	tries=0
+	while [[ ${tries} -lt 30 ]]; do
 		digres=$(dig txt +trace +noall +answer "_acme-challenge.$DOMAIN" | grep -P "^_acme-challenge\.$DOMAIN")
 		if [[ $? == 0 ]]; then
-			echo " -> Successfully propagated."
+			echo "  + Successfully propagated."
 			break
 		fi
 
-		echo " -> Retrying in 10s..."
+		tries=$((tries + 1))
+		if [[ ${tries} -ge 30 ]]; then
+			echo "  - Failed to propagate record in a timely manner." 2>&1
+			return 1
+		fi
+
+		echo "  - Retrying in 10s..."
 		sleep 10
 	done
 }
@@ -155,13 +162,13 @@ function deploy_challenge {
 function clean_challenge {
 	local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
 
-	echo "Removing _acme-challenge.$DOMAIN..."
+	echo " + Removing _acme-challenge.$DOMAIN..."
 
 	delres=$(del_record "_acme-challenge.$DOMAIN")
 	if [[ $? == 0 ]]; then
-		echo " -> Successfully removed."
+		echo "  + Successfully removed."
 	else
-		echo " -> Failed to remove: $delres" 1>&2
+		echo "  - Failed to remove: $delres" 1>&2
 	fi
 }
 
