@@ -1,0 +1,27 @@
+#!/bin/bash
+
+if [[ $# != 4 ]]; then
+	echo error: invalid number of parameters 1>&2
+	exit 1
+fi
+
+DOMAIN="${1}"
+KEYFILE="${2}"
+CERTFILE="${3}"
+CHAINFILE="${4}"
+
+#
+#   Examples ahead
+#
+
+if [[ ${DOMAIN} == rolisoft.net ]]; then
+	: # matches if the CN of the certificate is 'rolisoft.net'
+	  # do something with $*FILE preferably:
+	  #   scp "$CERTFILE" srv2.rolisoft.net:"$CERTFILE"
+	  # or reload/restart the proper service:
+	  #   service nginx reload
+fi
+
+if [[ ${DOMAIN} == *.rolisoft.net ]]; then
+	: # matches for every CN which names a subdomain of 'rolisoft.net'
+fi
