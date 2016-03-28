@@ -19,3 +19,5 @@ The `letsencrypt.sh` script will also call the hook script with the `deploy_cert
 	./deploy.sh domain-name path-to-key path-to-cert path-to-fullchain
 
 If special handling is required for any of the issued certificates, copy `deploy.sh.example` to `deploy.sh` and modify as necessary.
+
+Similarly, `unchanged.sh` will be called with the same parameters, if exists, for certificates which were not renewed, since they are still valid.
