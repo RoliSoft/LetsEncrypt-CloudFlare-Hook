@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $# != 4 ]]; then
+if [[ $# -lt 5 ]]; then
 	echo error: invalid number of parameters 1>&2
 	exit 1
 fi
@@ -8,7 +8,9 @@ fi
 DOMAIN="${1}"
 KEYFILE="${2}"
 CERTFILE="${3}"
-CHAINFILE="${4}"
+FULLCHAINFILE="${4}"
+CHAINFILE="${5}"
+TIMESTAMP="${6}"
 
 #
 #   Examples ahead

@@ -173,7 +173,7 @@ function clean_challenge {
 }
 
 function deploy_cert {
-	local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}"
+	local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}" TIMESTAMP="${6}"
 
 	if [[ -f deploy.sh ]]; then
 		./deploy.sh $@
