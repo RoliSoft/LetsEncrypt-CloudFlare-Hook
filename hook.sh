@@ -112,64 +112,88 @@ function del_record {
 #
 
 function deploy_challenge {
-	local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
-
-	echo " + Checking existence of _acme-challenge.$DOMAIN..."
-
-	zone_id=$(get_zone "$DOMAIN")
-	if [[ $? != 0 ]]; then
-		echo "  - Failed to get zone ID: $zone_id" 1>&2
-		return 1
+	if [[ $# -lt 3 ]]; then
+		echo " - Incorrect number of arguments for deploy_challenge." 1>&2
+		exit 1
 	fi
 
-	delres=$(del_record "_acme-challenge.$DOMAIN" "$zone_id")
-	if [[ $? == 0 ]]; then
-		echo "  + Removed previous record."
-	fi
+	DOMAINS=()
 
-	echo " + Adding new TXT record _acme-challenge.$DOMAIN..."
+	while [[ $# -ge 3 ]]; do
+		local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
 
-	addres=$(add_record "_acme-challenge.$DOMAIN" "$TOKEN_VALUE" "$zone_id")
-	if [[ $? == 0 ]]; then
-		echo "  + Successfully added."
-	else
-		echo "  - Failed to add: $addres" 1>&2
-	fi
+		DOMAINS+=("${DOMAIN}")
 
-	echo " + Waiting for record propagation..."
+		echo " + Checking existence of _acme-challenge.$DOMAIN..."
 
-	sleep 5
-
-	tries=0
-	while [[ ${tries} -lt 30 ]]; do
-		digres=$(dig txt +trace +noall +answer "_acme-challenge.$DOMAIN" | grep -P "^_acme-challenge\.$DOMAIN")
-		if [[ $? == 0 ]]; then
-			echo "  + Successfully propagated."
-			break
-		fi
-
-		tries=$((tries + 1))
-		if [[ ${tries} -ge 30 ]]; then
-			echo "  - Failed to propagate record in a timely manner." 2>&1
+		zone_id=$(get_zone "$DOMAIN")
+		if [[ $? != 0 ]]; then
+			echo "  - Failed to get zone ID: $zone_id" 1>&2
 			return 1
 		fi
 
-		echo "  - Retrying in 10s..."
-		sleep 10
+		delres=$(del_record "_acme-challenge.$DOMAIN" "$zone_id")
+		if [[ $? == 0 ]]; then
+			echo "  + Removed previous record."
+		fi
+
+		echo " + Adding new TXT record _acme-challenge.$DOMAIN..."
+
+		addres=$(add_record "_acme-challenge.$DOMAIN" "$TOKEN_VALUE" "$zone_id")
+		if [[ $? == 0 ]]; then
+			echo "  + Successfully added."
+		else
+			echo "  - Failed to add: $addres" 1>&2
+		fi
+
+		shift 3
+	done
+
+	for (( i = 0; i <= ${#DOMAINS[@]} - 1; i++ )); do
+		local DOMAIN="${DOMAINS[i]}"
+
+		echo " + Waiting for propagation of record _acme-challenge.$DOMAIN..."
+
+		tries=0
+		while [[ ${tries} -lt 60 ]]; do
+			digres=$(dig txt +trace +noall +answer "_acme-challenge.$DOMAIN" | grep -P "^_acme-challenge\.$DOMAIN")
+			if [[ $? == 0 ]]; then
+				echo "  + Successfully propagated."
+				break
+			fi
+
+			tries=$((tries + 1))
+			if [[ ${tries} -ge 60 ]]; then
+				echo "  - Failed to propagate record in a timely manner." 2>&1
+				break
+			fi
+
+			echo "  - Retrying in 5s..."
+			sleep 5
+		done
 	done
 }
 
 function clean_challenge {
-	local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
-
-	echo " + Removing _acme-challenge.$DOMAIN..."
-
-	delres=$(del_record "_acme-challenge.$DOMAIN")
-	if [[ $? == 0 ]]; then
-		echo "  + Successfully removed."
-	else
-		echo "  - Failed to remove: $delres" 1>&2
+	if [[ $# -lt 3 ]]; then
+		echo " - Incorrect number of arguments for clean_challenge." 1>&2
+		exit 1
 	fi
+
+	while [[ $# -ge 3 ]]; do
+		local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
+
+		echo " + Removing _acme-challenge.$DOMAIN..."
+
+		delres=$(del_record "_acme-challenge.$DOMAIN")
+		if [[ $? == 0 ]]; then
+			echo "  + Successfully removed."
+		else
+			echo "  - Failed to remove: $delres" 1>&2
+		fi
+
+		shift 3
+	done
 }
 
 function deploy_cert {
